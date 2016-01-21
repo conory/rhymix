@@ -145,8 +145,8 @@ $GLOBALS['RX_AUTOLOAD_FILE_MAP'] = array_change_key_case(array(
 	'HintTableTag' => 'classes/xml/xmlquery/tags/table/HintTableTag.class.php',
 	'TableTag' => 'classes/xml/xmlquery/tags/table/TableTag.class.php',
 	'TablesTag' => 'classes/xml/xmlquery/tags/table/TablesTag.class.php',
-	'Ftp' => 'common/libraries/ftp.php',
-	'Tar' => 'common/libraries/tar.php',
+	'Ftp' => 'libraries/ftp.php',
+	'Tar' => 'libraries/tar.php',
 ), CASE_LOWER);
 
 /**
@@ -170,7 +170,7 @@ spl_autoload_register(function($class_name)
 		default:
 			if (isset($GLOBALS['RX_AUTOLOAD_FILE_MAP'][$lc_class_name]))
 			{
-				$filename = RX_BASEDIR . $GLOBALS['RX_AUTOLOAD_FILE_MAP'][$lc_class_name];
+				$filename = RX_BASEDIR . 'common/' . $GLOBALS['RX_AUTOLOAD_FILE_MAP'][$lc_class_name];
 			}
 			elseif (preg_match('/^([a-zA-Z0-9_]+?)(Admin)?(View|Controller|Model|Api|Wap|Mobile)?$/', $class_name, $matches))
 			{
@@ -189,7 +189,7 @@ spl_autoload_register(function($class_name)
 /**
  * Also include the Composer autoloader.
  */
-if (file_exists(RX_BASEDIR  . 'vendor/autoload.php'))
+if (file_exists(RX_BASEDIR  . 'common/vendor/autoload.php'))
 {
-	require_once RX_BASEDIR  . 'vendor/autoload.php';
+	require_once RX_BASEDIR  . 'common/vendor/autoload.php';
 }
