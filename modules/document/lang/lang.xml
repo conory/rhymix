@@ -23,6 +23,21 @@
 		<value xml:lang="tr"><![CDATA[Küçük Resim Türü]]></value>
 		<value xml:lang="vi"><![CDATA[Định dạng hình nhỏ]]></value>
 	</item>
+	<item name="view_count_option">
+		<value xml:lang="ko"><![CDATA[조회수 설정]]></value>
+	</item>
+	<item name="view_count_option_all">
+		<value xml:lang="ko"><![CDATA[모두 계산]]></value>
+	</item>
+	<item name="view_count_option_some">
+		<value xml:lang="ko"><![CDATA[일부 계산]]></value>
+	</item>
+	<item name="view_count_option_once">
+		<value xml:lang="ko"><![CDATA[중복 금지]]></value>
+	</item>
+	<item name="view_count_option_none">
+		<value xml:lang="ko"><![CDATA[계산 안함]]></value>
+	</item>
 	<item name="thumbnail_crop">
 		<value xml:lang="ko"><![CDATA[잘라내기 (정해진 크기에 꽉 찬 모습의 썸네일을 만듭니다.)]]></value>
 		<value xml:lang="en"><![CDATA[Crop (to a specific size)]]></value>
@@ -183,6 +198,9 @@
 		<value xml:lang="tr"><![CDATA[Lütfen kategori ismi giriniz]]></value>
 		<value xml:lang="vi"><![CDATA[Hãy nhập tên thể loại]]></value>
 	</item>
+	<item name="about_view_count_option">
+		<value xml:lang="ko"><![CDATA[조회수설정에 따라 중복 조회수 카운트를 할 수 있도록 도와줍니다. 각 옵션에 따라 조회수 기록하는 방식이 달라집니다.]]></value>
+	</item>
 	<item name="about_expand">
 		<value xml:lang="ko"><![CDATA[선택하면 늘 펼쳐진 상태로 있게 합니다.]]></value>
 		<value xml:lang="en"><![CDATA[Select this option, and they will stay expanded.]]></value>
@@ -330,6 +348,10 @@
 	<item name="msg_document_is_admin_not_permitted">
 		<value xml:lang="ko"><![CDATA[최고관리자의 게시글을 지울 권한이 없습니다.]]></value>
 		<value xml:lang="en"><![CDATA[You don't have permission to delete the posts of Top Admin.]]></value>
+	</item>
+	<item name="msg_document_voted_cancel_not">
+		<value xml:lang="ko"><![CDATA[추천수가 0이하일 경우 추천캔슬을 사용할 수 없습니다.]]></value>
+		<value xml:lang="en"><![CDATA[]]></value>
 	</item>
 	<item name="move_target_module">
 		<value xml:lang="ko"><![CDATA[대상 페이지]]></value>

@@ -31,7 +31,6 @@ if (function_exists('mb_regex_encoding'))
  * Load constants and common functions.
  */
 require_once __DIR__ . '/constants.php';
-require_once __DIR__ . '/defaults.php';
 require_once __DIR__ . '/functions.php';
 require_once __DIR__ . '/legacy.php';
 
@@ -42,6 +41,11 @@ if(file_exists(RX_BASEDIR . 'config/config.user.inc.php'))
 {
 	require_once RX_BASEDIR . 'config/config.user.inc.php';
 }
+
+/**
+ * Load legacy debug settings.
+ */
+require_once __DIR__ . '/debug.php';
 
 /**
  * Define the list of legacy class names for the autoloader.
@@ -95,7 +99,6 @@ $GLOBALS['RX_AUTOLOAD_FILE_MAP'] = array_change_key_case(array(
 	'ModuleObject' => 'classes/module/ModuleObject.class.php',
 	'Object' => 'classes/object/Object.class.php',
 	'PageHandler' => 'classes/page/PageHandler.class.php',
-	'Crypto' => 'classes/security/Crypto.class.php',
 	'EmbedFilter' => 'classes/security/EmbedFilter.class.php',
 	'IpFilter' => 'classes/security/IpFilter.class.php',
 	'Password' => 'classes/security/Password.class.php',
@@ -141,8 +144,11 @@ $GLOBALS['RX_AUTOLOAD_FILE_MAP'] = array_change_key_case(array(
 	'HintTableTag' => 'classes/xml/xmlquery/tags/table/HintTableTag.class.php',
 	'TableTag' => 'classes/xml/xmlquery/tags/table/TableTag.class.php',
 	'TablesTag' => 'classes/xml/xmlquery/tags/table/TablesTag.class.php',
+	'Bmp' => 'common/libraries/bmp.php',
 	'Ftp' => 'common/libraries/ftp.php',
 	'Tar' => 'common/libraries/tar.php',
+	'CryptoCompat' => 'common/libraries/cryptocompat.php',
+	'VendorPass' => 'common/libraries/vendorpass.php',
 ), CASE_LOWER);
 
 /**

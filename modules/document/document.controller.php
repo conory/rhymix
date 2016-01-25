@@ -44,6 +44,27 @@ class documentController extends document
 		return $output;
 	}
 
+	function procDocumentVoteUpCancel()
+	{
+		if(!Context::get('is_logged')) return new Object(-1, 'msg_invalid_request');
+
+		$document_srl = Context::get('target_srl');
+		if(!$document_srl) return new Object(-1, 'msg_invalid_request');
+
+		$oDocumentModel = getModel('document');
+		$oDocument = $oDocumentModel->getDocument($document_srl, false, false);
+		if($oDocument->get('voted_count') <= 0)
+		{
+			return new Object(-1, 'msg_document_voted_cancel_not');
+		}
+		$point = 1;
+		$output = $this->updateVotedCountCancel($document_srl, $oDocument, $point);
+
+		$output = new Object();
+		$output->setMessage('success_voted_canceled');
+		return $output;
+	}
+
 	/**
 	 * insert alias
 	 * @param int $module_srl
@@ -86,6 +107,82 @@ class documentController extends document
 		$point = -1;
 		$output = $this->updateVotedCount($document_srl, $point);
 		$this->add('blamed_count', $output->get('blamed_count'));
+		return $output;
+	}
+
+	function procDocumentVoteDownCancel()
+	{
+		if(!Context::get('is_logged')) return new Object(-1, 'msg_invalid_request');
+
+		$document_srl = Context::get('target_srl');
+		if(!$document_srl) return new Object(-1, 'msg_invalid_request');
+
+		$oDocumentModel = getModel('document');
+		$oDocument = $oDocumentModel->getDocument($document_srl, false, false);
+		if($oDocument->get('blamed_count') >= 0)
+		{
+			return new Object(-1, 'msg_document_voted_cancel_not');
+		}
+		$point = -1;
+		$output = $this->updateVotedCountCancel($document_srl, $oDocument, $point);
+
+		$output = new Object();
+		$output->setMessage('success_blamed_canceled');
+		return $output;
+	}
+
+	/**
+	 * Update Document Voted Cancel
+	 * @param int $document_srl
+	 * @param Document $oDocument
+	 * @param int $point
+	 * @return object
+	 */
+	function updateVotedCountCancel($document_srl, $oDocument, $point)
+	{
+		$logged_info = Context::get('logged_info');
+
+		$args = new stdClass();
+		$d_args = new stdClass();
+		$args->document_srl = $d_args->document_srl = $document_srl;
+		$d_args->member_srl = $logged_info->member_srl;
+		if($point > 0)
+		{
+			$args->voted_count = $oDocument->get('voted_count') - $point;
+			$output = executeQuery('document.updateVotedCount', $args);
+		}
+		else
+		{
+			$args->blamed_count = $oDocument->get('blamed_count') - $point;
+			$output = executeQuery('document.updateBlamedCount', $args);
+		}
+		$d_output = executeQuery('document.deleteDocumentVotedLog', $d_args);
+		if(!$d_output->toBool()) return $d_output;
+
+		//session reset
+		$_SESSION['voted_document'][$document_srl] = false;
+
+		// begin transaction
+		$oDB = DB::getInstance();
+		$oDB->begin();
+
+		$obj = new stdClass();
+		$obj->member_srl = $oDocument->get('member_srl');
+		$obj->module_srl = $oDocument->get('module_srl');
+		$obj->document_srl = $oDocument->get('document_srl');
+		$obj->update_target = ($point < 0) ? 'blamed_count' : 'voted_count';
+		$obj->point = $point;
+		$obj->before_point = ($point < 0) ? $oDocument->get('blamed_count') : $oDocument->get('voted_count');
+		$obj->after_point = ($point < 0) ? $args->blamed_count : $args->voted_count;
+		$obj->cancel = 1;
+
+		$trigger_output = ModuleHandler::triggerCall('document.updateVotedCountCancel', 'after', $obj);
+		if(!$trigger_output->toBool())
+		{
+			$oDB->rollback();
+			return $trigger_output;
+		}
+
 		return $output;
 	}
 
@@ -309,6 +406,10 @@ class documentController extends document
 		if($logged_info->is_admin != 'Y') $obj->content = removeHackTag($obj->content);
 		// An error appears if both log-in info and user name don't exist.
 		if(!$logged_info->member_srl && !$obj->nick_name) return new Object(-1,'msg_invalid_request');
+
+		// Fix encoding of non-BMP UTF-8 characters.
+		$obj->title = utf8_mbencode($obj->title);
+		$obj->content = utf8_mbencode($obj->content);
 
 		$obj->lang_code = Context::getLangType();
 		// Insert data into the DB
@@ -551,6 +652,10 @@ class documentController extends document
 		}
 		// if temporary document, regdate is now setting
 		if($source_obj->get('status') == $this->getConfigStatus('temp')) $obj->regdate = date('YmdHis');
+
+		// Fix encoding of non-BMP UTF-8 characters.
+		$obj->title = utf8_mbencode($obj->title);
+		$obj->content = utf8_mbencode($obj->content);
 
 		// Insert data into the DB
 		$output = executeQuery('document.updateDocument', $obj);
@@ -888,7 +993,11 @@ class documentController extends document
 	{
 		// Pass if Crawler access
 		if(isCrawler()) return false;
-		
+		$oDocumentModel = getModel('document');
+		$config = $oDocumentModel->getDocumentConfig();
+
+		if($config->view_count_option == 'none') return false;
+
 		$document_srl = $oDocument->document_srl;
 		$member_srl = $oDocument->get('member_srl');
 		$logged_info = Context::get('logged_info');
@@ -898,28 +1007,40 @@ class documentController extends document
 		if(!$trigger_output->toBool()) return $trigger_output;
 
 		// Pass if read count is increaded on the session information
-		if($_SESSION['readed_document'][$document_srl]) return false;
-
-		// Pass if the author's IP address is as same as visitor's.
-		if($oDocument->get('ipaddress') == $_SERVER['REMOTE_ADDR'] && Context::getSessionStatus())
+		if($_SESSION['readed_document'][$document_srl] && $config->view_count_option == 'once')
 		{
-			$_SESSION['readed_document'][$document_srl] = true;
 			return false;
 		}
-		// Pass ater registering sesscion if the author is a member and has same information as the currently logged-in user.
-		if($member_srl && $logged_info->member_srl == $member_srl)
+		else if($config->view_count_option == 'some')
 		{
-			$_SESSION['readed_document'][$document_srl] = true;
-			return false;
+			if($_SESSION['readed_document'][$document_srl])
+			{
+				return false;
+			}
 		}
 
+		if($config->view_count_option == 'once')
+		{
+			// Pass if the author's IP address is as same as visitor's.
+			if($oDocument->get('ipaddress') == $_SERVER['REMOTE_ADDR'] && Context::getSessionStatus())
+			{
+				$_SESSION['readed_document'][$document_srl] = true;
+				return false;
+			}
+			// Pass ater registering sesscion if the author is a member and has same information as the currently logged-in user.
+			if($member_srl && $logged_info->member_srl == $member_srl)
+			{
+				$_SESSION['readed_document'][$document_srl] = true;
+				return false;
+			}
+		}
 		$oDB = DB::getInstance();
 		$oDB->begin();
 
 		// Update read counts
 		$args = new stdClass;
 		$args->document_srl = $document_srl;
-		$output = executeQuery('document.updateReadedCount', $args);
+		executeQuery('document.updateReadedCount', $args);
 
 		// Call a trigger when the read count is updated (after)
 		$trigger_output = ModuleHandler::triggerCall('document.updateReadedCount', 'after', $oDocument);
@@ -1151,7 +1272,7 @@ class documentController extends document
 		}
 
 		// Use member_srl for logged-in members and IP address for non-members.
-		$args = new stdClass;
+		$args = new stdClass();
 		if($member_srl)
 		{
 			$args->member_srl = $member_srl;
@@ -1177,11 +1298,15 @@ class documentController extends document
 		if($point < 0)
 		{
 			$args->blamed_count = $oDocument->get('blamed_count') + $point;
+			// Leave in the session information
+			$_SESSION['voted_document'][$document_srl] = $point;
 			$output = executeQuery('document.updateBlamedCount', $args);
 		}
 		else
 		{
 			$args->voted_count = $oDocument->get('voted_count') + $point;
+			// Leave in the session information
+			$_SESSION['voted_document'][$document_srl] = $point;
 			$output = executeQuery('document.updateVotedCount', $args);
 		}
 		if(!$output->toBool()) return $output;
@@ -1214,9 +1339,6 @@ class documentController extends document
 			$cache_key = 'document_item:'. getNumberingPath($document_srl) . $document_srl;
 			$oCacheHandler->delete($cache_key);
 		}
-
-		// Leave in the session information
-		$_SESSION['voted_document'][$document_srl] = true;
 
 		// Return result
 		$output = new Object();
