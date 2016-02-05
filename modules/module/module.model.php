@@ -25,6 +25,7 @@ class moduleModel extends module
 		$dirs[] = 'rss';
 		$dirs[] = 'atom';
 		$dirs[] = 'api';
+		$dirs[] = 'admin';
 		if(in_array($id, $dirs)) return true;
 		// mid test
 		$args = new stdClass();
@@ -621,6 +622,21 @@ class moduleModel extends module
 		else
 		{
 			return new stdClass();
+		}
+	}
+
+	/**
+	 * @brief Get trigger functions
+	 */
+	function getTriggerFunctions($trigger_name, $called_position)
+	{
+		if(isset($GLOBALS['__trigger_functions__'][$trigger_name][$called_position]))
+		{
+			return $GLOBALS['__trigger_functions__'][$trigger_name][$called_position];
+		}
+		else
+		{
+			return array();
 		}
 	}
 
