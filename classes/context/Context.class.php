@@ -519,6 +519,13 @@ class Context
 		$db_info->use_prepared_statements = $config['use_prepared_statements'] ? 'Y' : 'N';
 		$db_info->use_rewrite = $config['use_rewrite'] ? 'Y' : 'N';
 		$db_info->use_sso = $config['use_sso'] ? 'Y' : 'N';
+		if (is_array($config['other']))
+		{
+			foreach ($config['other'] as $key => $value)
+			{
+				$db_info->{$key} = $value;
+			}
+		}
 		
 		// Save old format to Context instance.
 		self::$_instance->allow_rewrite = $config['use_rewrite'];
@@ -563,7 +570,7 @@ class Context
 	 */
 	public static function getSslStatus()
 	{
-		return config('url.ssl');
+		return self::get('_use_ssl');
 	}
 
 	/**
@@ -573,7 +580,7 @@ class Context
 	 */
 	public static function getDefaultUrl()
 	{
-		return config('url.default');
+		return self::$_instance->db_info->default_url;
 	}
 
 	/**
@@ -836,6 +843,11 @@ class Context
 	 */
 	public static function setLangType($lang_type = 'ko')
 	{
+		if (!self::$_instance->db_info)
+		{
+			self::$_instance->db_info = new stdClass;
+		}
+		self::$_instance->db_info->lang_type = $lang_type;
 		self::$_instance->lang_type = $lang_type;
 		self::set('lang_type', $lang_type);
 
